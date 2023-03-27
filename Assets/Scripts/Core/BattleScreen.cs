@@ -12,6 +12,7 @@ public class BattleScreen : MonoBehaviour
     [Header("UI Components")]
     [SerializeField] private Button enterBattleButton;
     [SerializeField] private Button exitBattleButton;
+    [SerializeField] private Text resultsLabel;
     
     private Gamestate state = Gamestate.None;
     private UnityEvent<Gamestate> stateChanged = new ();
@@ -27,18 +28,24 @@ public class BattleScreen : MonoBehaviour
         enterBattleButton.onClick.AddListener(StartBattleState);
         exitBattleButton.onClick.AddListener(StartSetupState);
         
+        stateChanged.AddListener((gameState) => resultsLabel.gameObject.SetActive(gameState == Gamestate.Finished));
+
         StartSetupState();
     }
 
     private void DeclareVictory(string winnerName)
     {
+        resultsLabel.text = $"{winnerName} won!";
         FinishBattleState();
-        Debug.Log($"{winnerName} won!");
     }
     
     private void StartSetupState() => SetState(Gamestate.Setup);
-    
-    private void StartBattleState() => SetState(Gamestate.Battle);
+
+    private void StartBattleState()
+    {
+        slotSelector.Hide();
+        SetState(Gamestate.Battle);
+    }
     
     private void FinishBattleState() => SetState(Gamestate.Finished);
 

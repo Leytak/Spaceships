@@ -29,6 +29,7 @@ public partial class Spaceship : MonoBehaviour
 
     [HideInInspector] public UnityEvent Died;
     [HideInInspector] public UnityEvent<string> ConfigurationUpdated;
+    [HideInInspector] public UnityEvent<string> StateUpdated;
 
     public void Initialize(
         SlotSelector slotSelector,
@@ -49,6 +50,7 @@ public partial class Spaceship : MonoBehaviour
         var healthLost = Mathf.Min(damage - armorLost, currentStats.Health);
         currentStats.Health -= healthLost;
         if (!IsAlive()) Died?.Invoke();
+        StateUpdated?.Invoke(GetState());
     }
 
     private void Awake()
@@ -73,26 +75,24 @@ public partial class Spaceship : MonoBehaviour
     private void OnStateChanged(Gamestate state)
     {
         canChangeModules = state == Gamestate.Setup;
-        switch (state)
+        if (state == Gamestate.Battle)
         {
-            case Gamestate.Battle:
-                ResetStats();
-                if (weapons is not null)
-                    foreach (var weapon in weapons)
-                        weapon?.StartShooting(opponent);
-                StartRecovering();
-                StartIdle();
-                break;
-            case Gamestate.Finished:
-                if (weapons is not null)
-                    foreach (var weapon in weapons)
-                        weapon?.CancelShooting();
-                CancelRecovering();
-                break;
-            case Gamestate.Setup:
-                CancelIdle();
-                break;
+            ResetStats();
+            if (weapons is not null)
+                foreach (var weapon in weapons)
+                    weapon?.StartShooting(opponent);
+            StartRecovering();
+            StartIdle();
         }
+        else
+        {
+            if (weapons is not null)
+                foreach (var weapon in weapons)
+                    weapon?.CancelShooting();
+            CancelRecovering();
+        }
+        if (state == Gamestate.Setup)
+            CancelIdle();
     }
 
     private void OnWeaponSlotClicked(int slotIndex)
@@ -177,6 +177,7 @@ public partial class Spaceship : MonoBehaviour
                 weapon.SetDecreasedCooldown(decreaseCooldownSum);
         startStats = currentStats;
         ConfigurationUpdated?.Invoke(GetConfigurationInfo());
+        StateUpdated?.Invoke(GetState());
     }
 
     private void StartRecovering()
@@ -199,6 +200,7 @@ public partial class Spaceship : MonoBehaviour
         {
             yield return oneSec;
             currentStats.Armor = Mathf.Min(currentStats.Armor + currentStats.Recovery, startStats.Armor);
+            StateUpdated?.Invoke(GetState());
         }
     }
     
@@ -217,4 +219,6 @@ public partial class Spaceship : MonoBehaviour
     private string GetWeaponInfo(int index) => weapons[index]?.GetInfo() ?? "<empty>";
     
     private string GetModuleInfo(int index) => modules[index]?.GetInfo() ?? "<empty>";
+
+    private string GetState() => $"Health: {currentStats.Health:0.00}   Armor: {currentStats.Armor:0.00}";
 }

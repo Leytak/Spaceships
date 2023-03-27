@@ -2,6 +2,7 @@
 using System.Collections;
 using UnityEngine;
 
+[RequireComponent(typeof(LineRenderer))]
 public class Weapon : MonoBehaviour
 {
     [Serializable]
@@ -12,12 +13,16 @@ public class Weapon : MonoBehaviour
     }
     
     [SerializeField] private Stats baseStats;
+    [SerializeField] private float shotTrailTime;
 
     private Stats currentsStats;
     private IEnumerator shootingRoutine;
 
+    private LineRenderer lineRenderer;
+
     private void Awake()
     {
+        lineRenderer = GetComponent<LineRenderer>();
         currentsStats = baseStats;
     }
 
@@ -47,7 +52,15 @@ public class Weapon : MonoBehaviour
         while (target.IsAlive())
         {
             target.Hit(currentsStats.Damage);
+            StartCoroutine(AnimateShot(target.transform.position));
             yield return cooldown;
         }
+    }
+
+    private IEnumerator AnimateShot(Vector3 targetPosition)
+    {
+        lineRenderer.SetPosition(1, transform.InverseTransformPoint(targetPosition));
+        yield return new WaitForSeconds(shotTrailTime);
+        lineRenderer.SetPosition(1, lineRenderer.GetPosition(0));
     }
 }

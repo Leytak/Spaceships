@@ -11,13 +11,14 @@ public class SlotSelector : MonoBehaviour
     private Action<Weapon> weaponSelected;
     private Action<Module> moduleSelected;
 
-    private Vector2 buttonSize = new (2.5f, 0.5f);
+    private Vector2 weaponButtonSize = new (2.5f, 0.5f);
+    private Vector2 moduleButtonSize = new (0.5f, 0.5f);
     
     private void Awake()
     {
         foreach (var weapon in weapons)
         {
-            var button = CreateButton(weapon.transform);
+            var button = CreateButton(weapon.transform, weaponContainer.transform, weaponButtonSize);
             button.Clicked.AddListener(() =>
             {
                 weaponSelected?.Invoke(weapon);
@@ -27,7 +28,7 @@ public class SlotSelector : MonoBehaviour
 
         foreach (var module in modules)
         {
-            var button = CreateButton(module.transform);
+            var button = CreateButton(module.transform, moduleContainer.transform, moduleButtonSize);
             button.Clicked.AddListener(() =>
             {
                 moduleSelected?.Invoke(module);
@@ -42,15 +43,17 @@ public class SlotSelector : MonoBehaviour
     {
         weaponSelected = onWeaponSelected;
         weaponContainer.SetActive(true);
+        moduleContainer.SetActive(false);
     }
     
     public void SelectModule(Action<Module> onModuleSelected)
     {
         moduleSelected = onModuleSelected;
         moduleContainer.SetActive(true);
+        weaponContainer.SetActive(false);
     }
 
-    private void Hide()
+    public void Hide()
     {
         weaponContainer.SetActive(false);
         moduleContainer.SetActive(false);
@@ -58,11 +61,11 @@ public class SlotSelector : MonoBehaviour
         moduleSelected = null;
     }
 
-    private SimpleButton CreateButton(Transform parent)
+    private SimpleButton CreateButton(Transform parent, Transform container, Vector2 buttonSize)
     {
         var buttonGO = new GameObject();
         buttonGO.name = $"{parent.gameObject.name} button";
-        buttonGO.transform.parent = transform;
+        buttonGO.transform.parent = container;
         buttonGO.transform.position = parent.transform.position;
         buttonGO.AddComponent<BoxCollider2D>().size = buttonSize;
         return buttonGO.AddComponent<SimpleButton>();
